@@ -24,54 +24,6 @@
                 try { console.log(8),obj?.destroy?.(); } catch { console.log(99)/* ignore */ }
             }
 
-            /*
-            // Placemark variable so we can move it instead of creating new ones each time
-            var myPlacemark = null;
-
-            // Custom behavior: place placemark on click and log coordinates
-            function MyBehavior() {
-                this.options = new ymaps.option.Manager();
-                this.events = new ymaps.event.Manager();
-            }
-
-            MyBehavior.prototype = {
-                constructor: MyBehavior,
-                enable: function () {
-                    this._parent.getMap().events.add('click', this._onClick, this);
-                },
-                disable: function () {
-                    this._parent.getMap().events.remove('click', this._onClick, this);
-                },
-                setParent: function (parent) { this._parent = parent; },
-                getParent: function () { return this._parent; },
-
-                _onClick: function (e) {
-                    var coords = e.get('coords');
-                    guessCoords = coords;
-                    // If placemark exists — move it; otherwise create it
-                    if (myPlacemark) {
-                        myPlacemark.geometry.setCoordinates(coords);
-                    } else {
-                        myPlacemark = new ymaps.Placemark(coords, {
-                            balloonContent: 'Вы кликнули сюда'
-                        }, {
-                            draggable: true
-                        });
-                        this._parent.getMap().geoObjects.add(myPlacemark);
-                    }
-
-                    // Output the precise coordinates
-                    console.log("Clicked coordinates:", coords);
-                    console.log(`Координаты: ${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}`);
-                }
-            };
-
-            // Add the new behavior type to storage
-            ymaps.behavior.storage.add('mybehavior', MyBehavior);
-
-            // Enable our behavior
-            miniMap.behaviors.enable('mybehavior');
-            */
            miniMap.events.add('click', (e) => {
                 const coords = e.get('coords');
                 guessCoords = coords;
@@ -79,48 +31,12 @@
                 guessPlacemark = new ymaps.Placemark(coords, {}, { preset: 'islands#greenDotIcon' });
                 miniMap.geoObjects.add(guessPlacemark);
             });
-        
-            /*let coord = [0, 0];
-            function getPanorama() {
-            // Locate panorama for Moscow example coords
-            panorama = safeDestroy(panorama);
-            coord = getRandomCoord();
-            var locateRequest = ymaps.panorama.locate(coord);
-            
-            // The ymaps.panorama.locate function returns a Promise object,
-            // which is resolved by an array with the found panorama, or an empty
-            // array, if a panorama wasn't found near the point.
-            
-            locateRequest.then(
-            function (panoramas) {
-                if (panoramas.length) {
-
-                    console.log(coord);
-                    var panorama = new ymaps.panorama.Player('panorama', panoramas[0], {
-                        // Panorama options. 
-                        // direction - viewing direction.
-                        direction: [0, -50],
-                        controls: [],
-                        suppressMapOpenBlock: true,
-                        layer: { panoramaMarkers: false }
-                        
-                    })
-                    coord = panorama.getPosition()
-                    }
-                    
-                    else {
-                        console.log(1);
-                        getPanorama();
-                    };
-            });
-            
-            }*/
+    
             async function findPanoramaRandom() {
                 try {
                     const arr = await ymaps.panorama.locate(getRandomCoord());
                     const panos = Array.isArray(arr) ? arr : arr?.data || [];
                     const valid = panos.filter((p) => p?.getPosition?.());
-                    console.log(arr, panos, valid)
                     if (valid.length) return valid[0];
                 } catch { /* ignore */ }
                 
@@ -130,7 +46,6 @@
             async function loadPanorama() {
                 panorama = safeDestroy(panorama)
                 const pano = await findPanoramaRandom();
-                console.log(pano)
                 if (!pano) {
                     return loadPanorama();
                 }
@@ -146,8 +61,16 @@
 
             document.querySelector(".guess").addEventListener("click", function () {
                 var distance = ymaps.coordSystem.geo.getDistance(guessCoords, realPos);
-                document.querySelector(".guess_text").innerText = `Your score is ${calculatePoints(distance)} points.`;
-                console.log(`Your guess is ${(distance / 1000).toFixed(2)} km away from the actual location.`);
+                let points = calculatePoints(distance);
+                let color = "white";
+                if (points >= 4000) {
+                    color = "#8CFF85";
+                }
+                else {
+                    color = "#FF616B";
+                }
+                document.querySelector(".guess_points").innerHTML = `Your score is <p class="points" style="margin:0; display:inline;color: ${color}; text-shadow: 0px 0px 10px ${color};">${calculatePoints(distance)}</p>/6000 points.`;
+                document.querySelector(".guess_km").innerText = `Your guess is ${(distance / 1000).toFixed(2)} km away from the actual location.`;
                 
 
                 var actualPoint = new ymaps.Placemark(realPos, {}, {
@@ -156,18 +79,43 @@
                 miniMap.geoObjects.add(actualPoint);
 
                 var myPolyline = new ymaps.Polyline([guessCoords, realPos], {}, {
-                    strokeColor: '#00d4aa',
+                    strokeColor: '#8CFF85',
                     strokeWidth: 3,
                     strokeStyle: 'dash'   // Line transparency
                 });
 
-                
+                document.querySelector(".guess").disabled = true;
                 miniMap.geoObjects.add(myPolyline);
+
+                x = document.querySelector(".bg_blocker");
+                y = document.querySelector(".guess_container");
+                x.style.opacity = 0;
+                x.style.display = "flex";
+                y.style.right = '-100%';
+
+                // Small timeout to ensure reset takes effect
+                setTimeout(() => {
+                    // Fade in x
+                    x.style.opacity = 1;
+
+                    const divWidth = y.offsetWidth;
+                    const windowWidth = window.innerWidth;
+                    y.style.right = `${(windowWidth - divWidth)/2}px`; // adjust final position
+                }, 50);
             });
             loadPanorama();
-            document.querySelector(".newGame").addEventListener("click", function () {
+            document.querySelector(".button_newGame").addEventListener("click", function () {
         
             // Clear previous map objects
+            document.querySelector(".guess_container").style.right = '-100%'; // slide off-screen left
+            document.querySelector(".bg_blocker").style.opacity = 0;
+            document.querySelector(".guess").disabled = false;
+            // reset after animation ends
+            setTimeout(() => {
+                document.querySelector(".bg_blocker").style.display = 'none';
+            }, 1000); // same as transition duration
+
+
             miniMap.geoObjects.removeAll();
             loadPanorama();
            
@@ -176,7 +124,7 @@
 
         
     }
-    newGame();
+    
 
     function getRandomCoord() {
         // Latitude: between 40.099999 and 40.240000
@@ -193,17 +141,22 @@
     }   
     
     function calculatePoints(distance) {
-        const maxDistance = 15000; // 15 km → 0 points
-        const minDistance = 300;   // 0.3 km → 5000 points
+        const maxDistance = 15000; // 15 km -> 0 points
+        const minDistance = 300;   // 0.3 km -> 6000 points
     
         if (distance >= maxDistance) return 0;
-        if (distance <= minDistance) return 5000;
+        if (distance <= minDistance) return 6000;
     
         // Exponential rise: closer = more points
         const normalized = (distance - minDistance) / (maxDistance - minDistance); // 0..1
-        const points = Math.round(5000 * Math.pow(1 - normalized, 2)); // squared for exponential effect
+        const points = Math.round(6000 * Math.pow(1 - normalized, 2)); // squared for exponential effect
     
         return points;
     }
+    document.querySelector(".start").addEventListener("click", () => {
+        document.querySelector(".main_menu").style.display = "none";
+        newGame();
+    })
 
-    }
+    } 
+

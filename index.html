@@ -3,19 +3,38 @@
 <head>
     <title>YerevanGuesser</title>
     <link rel="stylesheet" href="index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet">
+    <link rel="icon" href="logo.png" type="image/png">
+
+
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <script src="config.js"></script>
-    
 </head>
 <body>
-    <div id="map"></div>
-    <button class="guess">Guess</button>
-    
-    <div class="guess_container">
-        <p class="guess_text"></p>
-        <button class="newGame">New Game</button>
+
+    <div class="main_menu">
+        <div class="main_menu__game">
+            <h1>YerevanGuesser</h1>
+            <img src="logo_2.png" alt="" width="100px">
+            <button class="button button_main start">Start Game</button>
+            <button class="button button_second">About Us</button>
+        </div>
     </div>
-    <div id="panorama"></div>
+    <div id="map"></div>
+    <button class="button guess">Guess</button>
+    <div class="bg_blocker">
+        <div class="guess_container">
+            <p class="guess_points">You scored 5758/6000 Points!</p>
+            <p class="guess_km">Your guess was 3.48 kilometers away from the target point</p>
+            <button class="button button_newGame">New Game</button>
+        </div>
+    </div>
+    
+    <div id="panorama">
+        
+    </div>
+
     <script src="index.js"></script>
 </body>
 </html>
